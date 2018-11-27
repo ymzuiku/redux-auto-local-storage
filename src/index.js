@@ -43,26 +43,37 @@ export default function autoStorageSave(store, localName, needSaveKeys) {
   // 首次读取
   const lastLocalData = storage.load(storage.localName);
   if (Object.prototype.toString.call(lastLocalData) === "[object Object]") {
-    store.dispatch({
-      type: "localStorageLoad: IO",
-      reducer: state => {
-        // 如果是immutable 使用toJS
-        if (state && state.toJS) {
-          const data = {
-            ...state.toJS(),
-            ...lastLocalData
-          };
-          for (const key in data) {
-            state = state.set(key, data[key]);
-          }
-          return state;
-        }
-        // 非immutable直接合并历史数据
-        return {
-          ...state,
-          ...lastLocalData
-        };
+    const state = store.getState();
+    if (state && state.toJS) {
+      const data = {
+        ...state.toJS(),
+        ...lastLocalData
+      };
+      for (const key in data) {
+        state = state.set(key, data[key]);
       }
+      store.dispatch({ type: "all_auto_local_storage", payload: state });
+    } else if (state) {
+      for (const k in state) {
+        if (state[k].toJS) {
+          const subData = {
+            ...state[k].toJS(),
+            ...lastLocalData[k]
+          };
+          for (const subKey in subData) {
+            state[k] = state[k].set(subKey, subData[subKey]);
+          }
+        }
+        store.dispatch({
+          type: k + "_auto_local_storage",
+          payload: state[k]
+        });
+      }
+    }
+    // 非immutable直接合并历史数据
+    store.dispatch({
+      type: "all_auto_local_storage",
+      payload: { ...state, ...lastLocalData }
     });
   }
   store.subscribe(() => {
