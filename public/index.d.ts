@@ -5,5 +5,5 @@ interface IStorage {
 }
 
 
-declare function autoStorageSave(store:any, localName:string, stateKeys:Array<any>): void;
+declare function reduxAutoLocalStorage(store:any, localName:string, stateKeys:Array<any>): void;
 export const storage:IStorage;
